@@ -25,10 +25,10 @@ all: sass2scss
 CXXFLAGS = -DSASS2SCSS_VERSION="\"$(SASS2SCSS_VERSION)\""
 
 sass2scss.o: sass2scss.cpp
-	g++ $(CXXFLAGS) -Wall -c sass2scss.cpp
+	g++ -std=c++0x $(CXXFLAGS) -Wall -c sass2scss.cpp
 
 sass2scss: sass2scss.o
-	g++ $(CXXFLAGS) -Wall -o sass2scss -I. tool/sass2scss.cpp sass2scss.o
+	g++ -std=c++0x $(CXXFLAGS) -Wall -o sass2scss -I. tool/sass2scss.cpp sass2scss.o
 
 clean:
 	ifeq ($(OS),Windows_NT)

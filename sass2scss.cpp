@@ -38,6 +38,11 @@
 namespace Sass
 {
 
+	// Regexes used to preprocess the sass file
+	std::regex space_regex("[[:space:]]*");
+	std::regex line_break_regex(".*[\\\\:,][[:space:]]*");
+	std::regex backslash_regex(".*[\\][[:space:]]*");
+
 	// return the actual prettify value from options
 	#define PRETTIFY(converter) (converter.options - (converter.options & 248))
 	// query the options integer to check if the option is enables
@@ -793,9 +798,13 @@ namespace Sass
 	// Preprocess the sass text in order to detect
 	// unfinished lines and, thus, concatenate them
 	// with the following line.
+	// 
+	// Replaced string::append for ostringstream for
+	// performance reasons.
 	std::string preprocess(const std::string& sass)
 	{
-		std::string result = "";
+		// std::string result = "";
+		std::ostringstream result;
 
 		std::istringstream lines(sass);
 		std::string line;
@@ -805,7 +814,7 @@ namespace Sass
 
 		while (safeGetline(lines, line) && !lines.eof())
 		{
-			if (std::regex_match(line, std::regex("[[:space:]]*")))
+			if (std::regex_match(line, space_regex))
 				continue;
 
 			// When concatenating, ignore white lines and trim whitespace
@@ -814,18 +823,26 @@ namespace Sass
 			{
 				line.erase(line.begin(), std::find_if(line.begin(),
 					line.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-				result += " ";
+				result << " ";
 			}
 
 			// Count parenthesis in order to keep the stylesheet sane
 			par_count += std::count(line.begin(), line.end(), '(') -
 				std::count(line.begin(), line.end(), ')');
 
-			result += line;
+			auto last_backslash = line.rfind('\\');
+			// If it ends with a backslash, strip it from the resulting string
+			if (std::regex_match(line, backslash_regex) &&
+				last_backslash != std::string::npos)
+			{
+				result << line.substr(0, last_backslash);
+			} else {
+				result << line;
+			}
 
 			// If it ends with a backslash, comma, colon, or doesn't have balanced
 			// parenthesis, concatenate
-			if (std::regex_match(line, std::regex(".*[\\\\:,][[:space:]]*")) ||
+			if (std::regex_match(line, line_break_regex) ||
 				par_count != 0)
 			{
 				concat = true;
@@ -833,20 +850,12 @@ namespace Sass
 			else
 			{
 				// Else, just print a new line
-				result += "\n";
+				result << "\n";
 				concat = false;
-			}
-
-			auto last_backslash = result.rfind('\\');
-			// If it ends with a backslash, strip it from the resulting string
-			if (std::regex_match(line, std::regex(".*[\\][[:space:]]*")) &&
-				last_backslash != std::string::npos)
-			{
-				result.erase(last_backslash);
 			}
 		}
 
-		return result;
+		return result.str();
 	}
 
 	// the main converter function for c++
