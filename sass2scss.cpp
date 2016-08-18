@@ -39,9 +39,9 @@ namespace Sass
 {
 
 	// Regexes used to preprocess the sass file
-	std::regex space_regex("[[:space:]]*");
-	std::regex line_break_regex(".*[\\\\:,][[:space:]]*");
-	std::regex backslash_regex(".*[\\][[:space:]]*");
+	std::regex space_regex("\\s*");
+	std::regex line_break_regex(".*[\\\\:,]\\s*");
+	std::regex backslash_regex(".*\\\\s*");
 
 	// return the actual prettify value from options
 	#define PRETTIFY(converter) (converter.options - (converter.options & 248))
